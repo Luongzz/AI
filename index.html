@@ -715,7 +715,7 @@ function sendMessage() {
 
   // Use streaming
   body.stream = true;
-  streamResponse('/api/chat', body, chat, input);
+  streamResponse('https://london-had-cleveland-covered.trycloudflare.com/api/chat', body, chat, input);
 }
 
 function md(raw) {
@@ -930,7 +930,7 @@ function submitEdit(msgId) {
   showTyping(false);
   var body = { messages: chat.messages, stream: true };
   if (chat.fileContext) body.files = chat.fileContext.files || [chat.fileContext];
-  streamResponse('/api/chat', body, chat, input);
+  streamResponse('https://london-had-cleveland-covered.trycloudflare.com/api/chat', body, chat, input);
 }
 
 function copyCode(id) {
