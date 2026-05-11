@@ -196,7 +196,7 @@ var activeChatId = null;
 var busy = false;
 var searchMode = false;
 
-// Fix 1: lazy loaders cho PDF.js và Mammoth
+
 async function loadPdfJs() {
   if (window['pdfjs-dist/build/pdf']) return;
   await new Promise(function(res, rej) {
@@ -285,7 +285,7 @@ function renderSidebar() {
       + '<button class="chat-item-del" data-del="' + esc(c.id) + '" title="X\u00F3a">&#10005;</button>'
       + '</div>';
   }).join('');
-  // Dùng event delegation thay vì inline onclick
+ 
   list.onclick = function(e) {
     var delBtn = e.target.closest('[data-del]');
     if (delBtn) { deleteChat(delBtn.getAttribute('data-del'), e); return; }
@@ -380,8 +380,7 @@ function removeTyping() { var t = document.getElementById('typing'); if (t) t.re
 
 
 
-// ── File handling ─────────────────────────────────────────────────────────
-// Fix 2: pendingFiles theo từng chat, không dùng global chung
+
 var _pendingFilesMap = {};
 Object.defineProperty(window, 'pendingFiles', {
   get: function() { return _pendingFilesMap[activeChatId] || []; },
@@ -493,7 +492,7 @@ function extractLastCodeBlock(text) {
     var firstNewline = block.indexOf('\n');
     var code = firstNewline > -1 ? block.slice(firstNewline + 1) : block;
     code = code.trim();
-    // Lấy block dài nhất (thường là file hoàn chỉnh)
+   
     if (code && (!best || code.length > best.length)) best = code;
   }
   return best;
@@ -515,7 +514,7 @@ function saveAsFileContext(codeBlockId) {
   chat.fileContext = { name: oldName, extractedText: newText };
   saveAllChats(chats);
   updateFileContextBar(chat);
-  // Flash feedback
+  
   var btn = el.previousElementSibling && el.previousElementSibling.querySelector('button');
   if (btn && btn.textContent.includes('Lưu')) {
     var orig = btn.innerHTML;
@@ -578,7 +577,7 @@ function streamResponse(url, body, chat, input) {
     function pump() {
       reader.read().then(function(result) {
         if (result.done) {
-          // Save final message
+          
           if (fullText) {
             chat.messages.push({ role: 'assistant', content: fullText, searchQuery: searchQuery });
             chat.updatedAt = Date.now();
@@ -603,7 +602,7 @@ function streamResponse(url, body, chat, input) {
               searchQuery = obj.searchQuery;
               modelName = obj.model;
               if (modelName) document.getElementById('modelBadge').textContent = modelName;
-              // Remove typing, create streaming bubble
+              
               removeTyping();
               msgDiv = createStreamBubble(didSearch ? searchQuery : null);
               bubbleEl = msgDiv.querySelector('.bubble');
@@ -701,7 +700,7 @@ function sendMessage() {
   if (doSearch) body.forceSearch = true;
 
   if (pendingFiles.length > 0) {
-    // Lưu files vào chat context
+    
     chat.fileContext = pendingFiles.length === 1
       ? pendingFiles[0]
       : { name: pendingFiles.map(function(f){ return f.name; }).join(', '), files: pendingFiles };
@@ -713,7 +712,7 @@ function sendMessage() {
     body.files = chat.fileContext.files || [chat.fileContext];
   }
 
-  // Use streaming
+  
   body.stream = true;
   streamResponse('https://london-had-cleveland-covered.trycloudflare.com/api/chat', body, chat, input);
 }
@@ -722,7 +721,7 @@ function md(raw) {
   if (!raw) return '';
   var blocks = [];
   var PH = 'ZZBLOCK';
-  // Split by ``` to extract code blocks without regex backtick issues
+  
   var parts = String(raw).split('```');
   var s = '';
   for (var i = 0; i < parts.length; i++) {
@@ -732,14 +731,14 @@ function md(raw) {
       var firstNewline = parts[i].indexOf('\n');
       var lang = firstNewline > -1 ? parts[i].slice(0, firstNewline).trim() : '';
       var code = firstNewline > -1 ? parts[i].slice(firstNewline + 1) : parts[i];
-      // Remove trailing whitespace/newline
+      
       code = code.replace(/\n?$/, '').trim();
       var n = blocks.length;
       blocks.push({ lang: lang || 'code', code: code });
       s += PH + n + 'ZZ';
     }
   }
-  // Trích xuất links TRƯỚC khi HTML escape để tránh & → &amp; làm hỏng URL
+  
   var linkPH = 'ZZLINK';
   var linkStore = [];
   s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, function(_, txt, url) {
@@ -750,7 +749,7 @@ function md(raw) {
 
   var h = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  // Restore links sau khi escape
+  
   h = h.replace(new RegExp(linkPH + '(\\d+)ZL', 'g'), function(_, i) {
     var lk = linkStore[parseInt(i, 10)];
     var safeUrl = lk.url.replace(/"/g, '%22');
@@ -789,14 +788,14 @@ function md(raw) {
   var ti = 0;
   while (ti < lines.length) {
     var ln = lines[ti].trim();
-    // Detect table: line starts and ends with |
+    
     if (ln.charAt(0) === '|' && ln.charAt(ln.length-1) === '|') {
       var tRows = [];
       var headerDone = false;
       while (ti < lines.length) {
         var tl = lines[ti].trim();
         if (!tl || tl.charAt(0) !== '|' || tl.charAt(tl.length-1) !== '|') break;
-        // Separator row: |---|---|
+        
         var inner = tl.slice(1,-1);
         if (/^[\-\s:|]+$/.test(inner)) { headerDone = true; ti++; continue; }
         var cells = inner.split('|').map(function(s){ return s.trim(); });
@@ -827,10 +826,10 @@ function md(raw) {
   }
   h = out.join('\n');
   h = h.replace(/\n/g, '<br>');
-  // Xoá <br> thừa quanh các block element (heading, ul, div, pre)
+  
   h = h.replace(/<br>(<\/?(?:h[1-6]|ul|li|div|pre)[^>]*>)/g, '$1');
   h = h.replace(/(<\/?(?:h[1-6]|ul|li|div|pre)[^>]*>)<br>/g, '$1');
-  // Remove <br> right before/after table divs
+  
   h = h.replace(/<br>(<div style="overflow-x)/g, '$1');
   h = h.replace(/(table><\/div>)<br>/g, '$1');
   return h;
@@ -898,7 +897,7 @@ function submitEdit(msgId) {
   var chat = chats.find(function(c) { return c.id === activeChatId; });
   if (!chat) return;
 
-  // Map DOM position → chat.messages index
+  
   var allUserDom = Array.from(document.querySelectorAll('.msg.user'));
   var userDomIdx = allUserDom.indexOf(div);
   var count = 0, msgHistIdx = -1;
@@ -910,7 +909,7 @@ function submitEdit(msgId) {
   }
   if (msgHistIdx < 0) return;
 
-  // Cắt history và xoá DOM từ vị trí đó
+  
   chat.messages = chat.messages.slice(0, msgHistIdx);
   saveAllChats(chats);
 
@@ -919,7 +918,7 @@ function submitEdit(msgId) {
   var domIdx = allDom.indexOf(div);
   for (var i = domIdx; i < allDom.length; i++) allDom[i].remove();
 
-  // Gửi lại
+ 
   var input = document.getElementById('userInput');
   busy = true;
   document.getElementById('sendBtn').disabled = true;
@@ -950,7 +949,7 @@ function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault
 function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('show'); }
 function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.remove('show'); }
 document.getElementById('userInput').addEventListener('focus', function() {
-  // Chỉ scroll khi đang active (không phải khi quay lại tab)
+  
   if (!document.hidden) {
     setTimeout(function() { document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight; }, 150);
   }
